@@ -1,358 +1,197 @@
--- =============================================================
--- STEP 1: Create Extensions
--- =============================================================
+-- Create Extensions  
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";  
 
--- Enable generation of UUIDs
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Create All Tables and Fields  
+CREATE TABLE reference_data (  
+    reference_data_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    reference_type VARCHAR(100) NOT NULL,  
+    reference_code VARCHAR(100) NOT NULL,  
+    description TEXT,  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- Enable trigram indexes for fuzzy search
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE UNIQUE INDEX ux_reference_data_type_code  
+    ON reference_data(reference_type, reference_code);  
 
+CREATE TABLE person (  
+    person_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    first_name VARCHAR(100) NOT NULL,  
+    last_name VARCHAR(100) NOT NULL,  
+    role VARCHAR(50) NOT NULL,  -- e.g., Judge, Lawyer, Plaintiff, Defendant  
+    contact_email VARCHAR(255),  
+    contact_phone VARCHAR(50),  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- =============================================================
--- STEP 2: Create All Tables and Fields
--- =============================================================
+CREATE TABLE app_user (  
+    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    username VARCHAR(100) NOT NULL UNIQUE,  
+    password_hash VARCHAR(255) NOT NULL,  
+    person_id UUID NOT NULL,  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- Table: reference_data
-CREATE TABLE reference_data (
-    id                  uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    category            text            NOT NULL,
-    code                text            NOT NULL,
-    value               text,
-    description         text,
-    is_active           boolean         NOT NULL DEFAULT TRUE,
-    created_by_user_id  uuid,
-    created_at          timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id  uuid,
-    updated_at          timestamptz     NOT NULL DEFAULT now()
-);
+CREATE TABLE court_case (  
+    case_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    case_name VARCHAR(200) NOT NULL,  
+    filing_date DATE NOT NULL,  
+    deadline_date DATE,  
+    status_id UUID NOT NULL,  -- FK to reference_data(reference_type='case_status')  
+    access_level_id UUID,      -- FK to reference_data(reference_type='access_level')  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- Table: organisations
-CREATE TABLE organisations (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    name                 text            NOT NULL,
-    industry             text,
-    subscription_tier    text,
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+CREATE TABLE hearing (  
+    hearing_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    case_id UUID NOT NULL,  
+    hearing_datetime TIMESTAMP WITHOUT TIME ZONE NOT NULL,  
+    location VARCHAR(200),  
+    judge_id UUID NOT NULL,  
+    deadline_date DATE,  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- Table: users
-CREATE TABLE users (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    organisation_id      uuid            NOT NULL,
-    email                text            NOT NULL,
-    password_hash        text            NOT NULL,
-    role                 text            NOT NULL,
-    last_login_at        timestamptz,
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+CREATE TABLE case_party (  
+    case_party_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    case_id UUID NOT NULL,  
+    person_id UUID NOT NULL,  
+    party_role_id UUID NOT NULL,  -- FK to reference_data(reference_type='party_role')  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- Table: clients
-CREATE TABLE clients (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    organisation_id      uuid            NOT NULL,
-    name                 text            NOT NULL,
-    contact_email        text,
-    active               boolean         NOT NULL DEFAULT TRUE,
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+CREATE TABLE evidence (  
+    evidence_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
+    case_id UUID NOT NULL,  
+    description TEXT,  
+    type_id UUID NOT NULL,            -- FK to reference_data(reference_type='evidence_type')  
+    date_submitted DATE,  
+    access_level_id UUID,             -- FK to reference_data(reference_type='access_level')  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
+);  
 
--- Table: campaigns
-CREATE TABLE campaigns (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    client_id            uuid            NOT NULL,
-    name                 text            NOT NULL,
-    platform             text            NOT NULL,
-    goal                 text,
-    start_date           date,
-    end_date             date,
-    estimated_budget     numeric(12,2),
-    actual_spend         numeric(12,2),
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+CREATE TABLE hearing_evidence (  
+    hearing_id UUID NOT NULL,  
+    evidence_id UUID NOT NULL,  
+    created_by_username VARCHAR(255),  
+    updated_by_username VARCHAR(255),  
+    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
+    PRIMARY KEY (hearing_id, evidence_id)  
+);  
 
--- Table: scheduled_posts
-CREATE TABLE scheduled_posts (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    campaign_id          uuid            NOT NULL,
-    content              text,
-    media_url            text,
-    platform             text            NOT NULL,
-    scheduled_time       timestamptz     NOT NULL,
-    status               text            NOT NULL DEFAULT 'scheduled',
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+-- Create All Constraints & Foreign Keys in Logical Order  
+ALTER TABLE app_user  
+    ADD CONSTRAINT fk_app_user_person  
+        FOREIGN KEY (person_id) REFERENCES person(person_id);  
 
--- Table: post_metrics
-CREATE TABLE post_metrics (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    scheduled_post_id    uuid            NOT NULL,
-    likes                integer         NOT NULL DEFAULT 0,
-    shares               integer         NOT NULL DEFAULT 0,
-    comments             integer         NOT NULL DEFAULT 0,
-    impressions          integer         NOT NULL DEFAULT 0,
-    collected_at         timestamptz     NOT NULL DEFAULT now(),
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+ALTER TABLE court_case  
+    ADD CONSTRAINT fk_case_status  
+        FOREIGN KEY (status_id) REFERENCES reference_data(reference_data_id),  
+    ADD CONSTRAINT fk_case_access_level  
+        FOREIGN KEY (access_level_id) REFERENCES reference_data(reference_data_id);  
 
--- Table: assets
-CREATE TABLE assets (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    campaign_id          uuid,
-    scheduled_post_id    uuid,
-    file_url             text            NOT NULL,
-    asset_type           text,
-    title                text,
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+ALTER TABLE hearing  
+    ADD CONSTRAINT fk_hearing_case  
+        FOREIGN KEY (case_id) REFERENCES court_case(case_id),  
+    ADD CONSTRAINT fk_hearing_judge  
+        FOREIGN KEY (judge_id) REFERENCES person(person_id);  
 
--- Table: notes
-CREATE TABLE notes (
-    id                   uuid            NOT NULL DEFAULT uuid_generate_v4(),
-    user_id              uuid            NOT NULL,
-    campaign_id          uuid,
-    scheduled_post_id    uuid,
-    content              text            NOT NULL,
-    created_by_user_id   uuid,
-    created_at           timestamptz     NOT NULL DEFAULT now(),
-    updated_by_user_id   uuid,
-    updated_at           timestamptz     NOT NULL DEFAULT now()
-);
+ALTER TABLE case_party  
+    ADD CONSTRAINT fk_case_party_case  
+        FOREIGN KEY (case_id) REFERENCES court_case(case_id),  
+    ADD CONSTRAINT fk_case_party_person  
+        FOREIGN KEY (person_id) REFERENCES person(person_id),  
+    ADD CONSTRAINT fk_case_party_role  
+        FOREIGN KEY (party_role_id) REFERENCES reference_data(reference_data_id);  
 
+ALTER TABLE evidence  
+    ADD CONSTRAINT fk_evidence_case  
+        FOREIGN KEY (case_id) REFERENCES court_case(case_id),  
+    ADD CONSTRAINT fk_evidence_type  
+        FOREIGN KEY (type_id) REFERENCES reference_data(reference_data_id),  
+    ADD CONSTRAINT fk_evidence_access_level  
+        FOREIGN KEY (access_level_id) REFERENCES reference_data(reference_data_id);  
 
--- =============================================================
--- STEP 3: Create All Constraints
--- =============================================================
+ALTER TABLE hearing_evidence  
+    ADD CONSTRAINT fk_hearing_evidence_hearing  
+        FOREIGN KEY (hearing_id) REFERENCES hearing(hearing_id),  
+    ADD CONSTRAINT fk_hearing_evidence_evidence  
+        FOREIGN KEY (evidence_id) REFERENCES evidence(evidence_id);  
 
--- Primary Keys
-ALTER TABLE reference_data ADD CONSTRAINT reference_data_pkey PRIMARY KEY (id);
-ALTER TABLE organisations   ADD CONSTRAINT organisations_pkey PRIMARY KEY (id);
-ALTER TABLE users           ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-ALTER TABLE clients         ADD CONSTRAINT clients_pkey PRIMARY KEY (id);
-ALTER TABLE campaigns       ADD CONSTRAINT campaigns_pkey PRIMARY KEY (id);
-ALTER TABLE scheduled_posts ADD CONSTRAINT scheduled_posts_pkey PRIMARY KEY (id);
-ALTER TABLE post_metrics    ADD CONSTRAINT post_metrics_pkey PRIMARY KEY (id);
-ALTER TABLE assets          ADD CONSTRAINT assets_pkey PRIMARY KEY (id);
-ALTER TABLE notes           ADD CONSTRAINT notes_pkey PRIMARY KEY (id);
+-- Create Comments for Tables and Fields  
+COMMENT ON TABLE reference_data IS 'Generic reference table for codes and types (e.g., case_status, evidence_type, access_level, party_role).';  
+COMMENT ON COLUMN reference_data.reference_data_id IS 'Primary key for the reference data item.';  
+COMMENT ON COLUMN reference_data.reference_type IS 'Category of reference data (must match business context).';  
+COMMENT ON COLUMN reference_data.reference_code IS 'Unique code within its type for business use.';  
+COMMENT ON COLUMN reference_data.description IS 'Human-readable description of the reference code.';  
 
--- Unique Constraints
-ALTER TABLE reference_data ADD CONSTRAINT reference_data_cat_code_uniq UNIQUE (category, code);
-ALTER TABLE organisations   ADD CONSTRAINT organisations_name_uniq UNIQUE (name);
-ALTER TABLE users           ADD CONSTRAINT users_email_uniq UNIQUE (email);
-ALTER TABLE clients         ADD CONSTRAINT clients_org_name_uniq UNIQUE (organisation_id, name);
-ALTER TABLE campaigns       ADD CONSTRAINT campaigns_client_name_uniq UNIQUE (client_id, name);
+COMMENT ON TABLE person IS 'Represents any individual involved in the court system (judge, lawyer, plaintiff, defendant).';  
+COMMENT ON COLUMN person.person_id IS 'Primary key for a person record.';  
+COMMENT ON COLUMN person.first_name IS 'Person''s given name.';  
+COMMENT ON COLUMN person.last_name IS 'Person''s family name.';  
+COMMENT ON COLUMN person.role IS 'Primary legal role (Judge, Lawyer, Plaintiff, Defendant).';  
+COMMENT ON COLUMN person.contact_email IS 'Email address of the person.';  
+COMMENT ON COLUMN person.contact_phone IS 'Telephone contact number.';  
 
--- Check Constraints
-ALTER TABLE notes ADD CONSTRAINT notes_subject_check 
-    CHECK (
-        (campaign_id IS NOT NULL AND scheduled_post_id IS NULL)
-        OR 
-        (campaign_id IS NULL AND scheduled_post_id IS NOT NULL)
-    );
+COMMENT ON TABLE app_user IS 'Login credentials and linkage to a person record for authentication/authorization.';  
+COMMENT ON COLUMN app_user.user_id IS 'Primary key for user credentials.';  
+COMMENT ON COLUMN app_user.username IS 'Unique login name.';  
+COMMENT ON COLUMN app_user.password_hash IS 'Hashed password for authentication.';  
+COMMENT ON COLUMN app_user.person_id IS 'Links user credentials to a person entity.';  
 
+COMMENT ON TABLE court_case IS 'Core table storing information about legal cases.';  
+COMMENT ON COLUMN court_case.case_id IS 'Primary key for court case.';  
+COMMENT ON COLUMN court_case.case_name IS 'Descriptive name/title of the case.';  
+COMMENT ON COLUMN court_case.filing_date IS 'Official date when the case was filed.';  
+COMMENT ON COLUMN court_case.deadline_date IS 'Optional deadline date for case-related actions.';  
+COMMENT ON COLUMN court_case.status_id IS 'References current status (Open, Adjourned, Closed, etc.).';  
+COMMENT ON COLUMN court_case.access_level_id IS 'Reference to access restrictions for case visibility.';  
 
--- =============================================================
--- STEP 4: Create All Foreign Keys
--- =============================================================
+COMMENT ON TABLE hearing IS 'Scheduled court session linked to a case and presided over by a judge.';  
+COMMENT ON COLUMN hearing.hearing_id IS 'Primary key for hearing record.';  
+COMMENT ON COLUMN hearing.case_id IS 'Foreign key linking to the parent court case.';  
+COMMENT ON COLUMN hearing.hearing_datetime IS 'Date and time when the hearing occurs.';  
+COMMENT ON COLUMN hearing.location IS 'Physical or virtual location of the hearing.';  
+COMMENT ON COLUMN hearing.judge_id IS 'Person (Judge) presiding over this hearing.';  
+COMMENT ON COLUMN hearing.deadline_date IS 'Optional deadline date for hearing-related filings.';  
 
--- reference_data metadata
-ALTER TABLE reference_data 
-    ADD CONSTRAINT reference_data_created_by_fkey FOREIGN KEY (created_by_user_id)  REFERENCES users(id),
-    ADD CONSTRAINT reference_data_updated_by_fkey FOREIGN KEY (updated_by_user_id)  REFERENCES users(id);
+COMMENT ON TABLE case_party IS 'Associates persons with cases in roles such as plaintiff or defendant.';  
+COMMENT ON COLUMN case_party.case_party_id IS 'Primary key for case-party assignment.';  
+COMMENT ON COLUMN case_party.case_id IS 'Foreign key to the associated court case.';  
+COMMENT ON COLUMN case_party.person_id IS 'Foreign key to the person in this role.';  
+COMMENT ON COLUMN case_party.party_role_id IS 'References the role in this case (plaintiff or defendant).';  
 
--- organisations metadata
-ALTER TABLE organisations 
-    ADD CONSTRAINT org_created_by_fkey FOREIGN KEY (created_by_user_id)  REFERENCES users(id),
-    ADD CONSTRAINT org_updated_by_fkey FOREIGN KEY (updated_by_user_id)  REFERENCES users(id);
+COMMENT ON TABLE evidence IS 'Records individual evidence items linked to cases and potentially hearings.';  
+COMMENT ON COLUMN evidence.evidence_id IS 'Primary key for an evidence item.';  
+COMMENT ON COLUMN evidence.case_id IS 'Foreign key to the parent court case.';  
+COMMENT ON COLUMN evidence.description IS 'Textual description of the evidence.';  
+COMMENT ON COLUMN evidence.type_id IS 'References the type of evidence (Document, Photo, Video).';  
+COMMENT ON COLUMN evidence.date_submitted IS 'Date when evidence was submitted to the case.';  
+COMMENT ON COLUMN evidence.access_level_id IS 'Reference to access restrictions for evidence.';  
 
--- users
-ALTER TABLE users
-    ADD CONSTRAINT users_org_fkey           FOREIGN KEY (organisation_id)     REFERENCES organisations(id),
-    ADD CONSTRAINT users_created_by_self    FOREIGN KEY (created_by_user_id)   REFERENCES users(id),
-    ADD CONSTRAINT users_updated_by_self    FOREIGN KEY (updated_by_user_id)   REFERENCES users(id);
+COMMENT ON TABLE hearing_evidence IS 'Join table linking evidence items to hearings where they are presented.';  
+COMMENT ON COLUMN hearing_evidence.hearing_id IS 'Foreign key to the hearing.';  
+COMMENT ON COLUMN hearing_evidence.evidence_id IS 'Foreign key to the evidence item.';  
 
--- clients
-ALTER TABLE clients
-    ADD CONSTRAINT clients_org_fkey         FOREIGN KEY (organisation_id)     REFERENCES organisations(id),
-    ADD CONSTRAINT clients_created_by_fkey  FOREIGN KEY (created_by_user_id)   REFERENCES users(id),
-    ADD CONSTRAINT clients_updated_by_fkey  FOREIGN KEY (updated_by_user_id)   REFERENCES users(id);
-
--- campaigns
-ALTER TABLE campaigns
-    ADD CONSTRAINT campaigns_client_fkey        FOREIGN KEY (client_id)          REFERENCES clients(id),
-    ADD CONSTRAINT campaigns_created_by_fkey    FOREIGN KEY (created_by_user_id)  REFERENCES users(id),
-    ADD CONSTRAINT campaigns_updated_by_fkey    FOREIGN KEY (updated_by_user_id)  REFERENCES users(id);
-
--- scheduled_posts
-ALTER TABLE scheduled_posts
-    ADD CONSTRAINT schedposts_campaign_fkey     FOREIGN KEY (campaign_id)        REFERENCES campaigns(id),
-    ADD CONSTRAINT schedposts_created_by_fkey   FOREIGN KEY (created_by_user_id)  REFERENCES users(id),
-    ADD CONSTRAINT schedposts_updated_by_fkey   FOREIGN KEY (updated_by_user_id)  REFERENCES users(id);
-
--- post_metrics
-ALTER TABLE post_metrics
-    ADD CONSTRAINT metrics_post_fkey            FOREIGN KEY (scheduled_post_id)   REFERENCES scheduled_posts(id),
-    ADD CONSTRAINT metrics_created_by_fkey      FOREIGN KEY (created_by_user_id)   REFERENCES users(id),
-    ADD CONSTRAINT metrics_updated_by_fkey      FOREIGN KEY (updated_by_user_id)   REFERENCES users(id);
-
--- assets
-ALTER TABLE assets
-    ADD CONSTRAINT assets_campaign_fkey         FOREIGN KEY (campaign_id)         REFERENCES campaigns(id),
-    ADD CONSTRAINT assets_schedpost_fkey        FOREIGN KEY (scheduled_post_id)   REFERENCES scheduled_posts(id),
-    ADD CONSTRAINT assets_created_by_fkey       FOREIGN KEY (created_by_user_id)  REFERENCES users(id),
-    ADD CONSTRAINT assets_updated_by_fkey       FOREIGN KEY (updated_by_user_id)  REFERENCES users(id);
-
--- notes
-ALTER TABLE notes
-    ADD CONSTRAINT notes_user_fkey              FOREIGN KEY (user_id)             REFERENCES users(id),
-    ADD CONSTRAINT notes_campaign_fkey          FOREIGN KEY (campaign_id)         REFERENCES campaigns(id),
-    ADD CONSTRAINT notes_schedpost_fkey         FOREIGN KEY (scheduled_post_id)   REFERENCES scheduled_posts(id),
-    ADD CONSTRAINT notes_created_by_fkey        FOREIGN KEY (created_by_user_id)   REFERENCES users(id),
-    ADD CONSTRAINT notes_updated_by_fkey        FOREIGN KEY (updated_by_user_id)   REFERENCES users(id);
-
-
--- =============================================================
--- COMMENTS: Document Tables and Columns
--- =============================================================
-
--- reference_data
-COMMENT ON TABLE reference_data IS 'Stores reference values for categories such as roles, platforms, industries, etc.';
-COMMENT ON COLUMN reference_data.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN reference_data.category IS 'Grouping category, e.g., role, platform, industry.';
-COMMENT ON COLUMN reference_data.code IS 'Code or key within the category.';
-COMMENT ON COLUMN reference_data.value IS 'Human-readable value.';
-COMMENT ON COLUMN reference_data.description IS 'Optional description.';
-COMMENT ON COLUMN reference_data.is_active IS 'Flag indicating active/inactive status.';
-COMMENT ON COLUMN reference_data.created_by_user_id IS 'User who inserted this record.';
-COMMENT ON COLUMN reference_data.created_at IS 'Timestamp when inserted.';
-COMMENT ON COLUMN reference_data.updated_by_user_id IS 'User who last updated this record.';
-COMMENT ON COLUMN reference_data.updated_at IS 'Timestamp when last updated.';
-
--- organisations
-COMMENT ON TABLE organisations IS 'Client organisations or agencies using the platform.';
-COMMENT ON COLUMN organisations.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN organisations.name IS 'Organisation name.';
-COMMENT ON COLUMN organisations.industry IS 'Industry code from reference_data.';
-COMMENT ON COLUMN organisations.subscription_tier IS 'Subscription tier code from reference_data.';
-COMMENT ON COLUMN organisations.created_by_user_id IS 'User who created this organisation record.';
-COMMENT ON COLUMN organisations.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN organisations.updated_by_user_id IS 'User who last updated this organisation record.';
-COMMENT ON COLUMN organisations.updated_at IS 'Timestamp when last updated.';
-
--- users
-COMMENT ON TABLE users IS 'Platform users with authentication and role-based access.';
-COMMENT ON COLUMN users.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN users.organisation_id IS 'Owning organisation.';
-COMMENT ON COLUMN users.email IS 'Unique login email.';
-COMMENT ON COLUMN users.password_hash IS 'Hashed password.';
-COMMENT ON COLUMN users.role IS 'Role code from reference_data.';
-COMMENT ON COLUMN users.last_login_at IS 'Timestamp of last successful login.';
-COMMENT ON COLUMN users.created_by_user_id IS 'User who created this user record.';
-COMMENT ON COLUMN users.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN users.updated_by_user_id IS 'User who last updated this user record.';
-COMMENT ON COLUMN users.updated_at IS 'Timestamp when last updated.';
-
--- clients
-COMMENT ON TABLE clients IS 'End-clients managed by organisations.';
-COMMENT ON COLUMN clients.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN clients.organisation_id IS 'Owning organisation.';
-COMMENT ON COLUMN clients.name IS 'Client name.';
-COMMENT ON COLUMN clients.contact_email IS 'Primary contact email.';
-COMMENT ON COLUMN clients.active IS 'Indicates if client is active.';
-COMMENT ON COLUMN clients.created_by_user_id IS 'User who created this client record.';
-COMMENT ON COLUMN clients.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN clients.updated_by_user_id IS 'User who last updated this client record.';
-COMMENT ON COLUMN clients.updated_at IS 'Timestamp when last updated.';
-
--- campaigns
-COMMENT ON TABLE campaigns IS 'Social media campaigns for clients.';
-COMMENT ON COLUMN campaigns.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN campaigns.client_id IS 'Owning client.';
-COMMENT ON COLUMN campaigns.name IS 'Campaign name.';
-COMMENT ON COLUMN campaigns.platform IS 'Platform code from reference_data.';
-COMMENT ON COLUMN campaigns.goal IS 'Campaign goal code from reference_data.';
-COMMENT ON COLUMN campaigns.start_date IS 'Start date.';
-COMMENT ON COLUMN campaigns.end_date IS 'End date.';
-COMMENT ON COLUMN campaigns.estimated_budget IS 'Planned budget.';
-COMMENT ON COLUMN campaigns.actual_spend IS 'Actual spend.';
-COMMENT ON COLUMN campaigns.created_by_user_id IS 'User who created this campaign.';
-COMMENT ON COLUMN campaigns.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN campaigns.updated_by_user_id IS 'User who last updated this campaign.';
-COMMENT ON COLUMN campaigns.updated_at IS 'Timestamp when last updated.';
-
--- scheduled_posts
-COMMENT ON TABLE scheduled_posts IS 'Posts scheduled as part of campaigns.';
-COMMENT ON COLUMN scheduled_posts.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN scheduled_posts.campaign_id IS 'Owning campaign.';
-COMMENT ON COLUMN scheduled_posts.content IS 'Text content of the post.';
-COMMENT ON COLUMN scheduled_posts.media_url IS 'URL to image/video asset.';
-COMMENT ON COLUMN scheduled_posts.platform IS 'Platform code from reference_data.';
-COMMENT ON COLUMN scheduled_posts.scheduled_time IS 'When the post is scheduled to go live.';
-COMMENT ON COLUMN scheduled_posts.status IS 'Status code from reference_data.';
-COMMENT ON COLUMN scheduled_posts.created_by_user_id IS 'User who created this post.';
-COMMENT ON COLUMN scheduled_posts.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN scheduled_posts.updated_by_user_id IS 'User who last updated this post.';
-COMMENT ON COLUMN scheduled_posts.updated_at IS 'Timestamp when last updated.';
-
--- post_metrics
-COMMENT ON TABLE post_metrics IS 'Engagement metrics snapshots for each scheduled post.';
-COMMENT ON COLUMN post_metrics.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN post_metrics.scheduled_post_id IS 'Related scheduled post.';
-COMMENT ON COLUMN post_metrics.likes IS 'Number of likes.';
-COMMENT ON COLUMN post_metrics.shares IS 'Number of shares.';
-COMMENT ON COLUMN post_metrics.comments IS 'Number of comments.';
-COMMENT ON COLUMN post_metrics.impressions IS 'Number of impressions.';
-COMMENT ON COLUMN post_metrics.collected_at IS 'Timestamp when metrics were fetched.';
-COMMENT ON COLUMN post_metrics.created_by_user_id IS 'User who recorded these metrics.';
-COMMENT ON COLUMN post_metrics.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN post_metrics.updated_by_user_id IS 'User who last updated these metrics.';
-COMMENT ON COLUMN post_metrics.updated_at IS 'Timestamp when last updated.';
-
--- assets
-COMMENT ON TABLE assets IS 'Media assets linked to campaigns or scheduled posts.';
-COMMENT ON COLUMN assets.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN assets.campaign_id IS 'Optional campaign-level asset.';
-COMMENT ON COLUMN assets.scheduled_post_id IS 'Optional post-level asset.';
-COMMENT ON COLUMN assets.file_url IS 'URL of the media file.';
-COMMENT ON COLUMN assets.asset_type IS 'Type code from reference_data.';
-COMMENT ON COLUMN assets.title IS 'Optional title or caption.';
-COMMENT ON COLUMN assets.created_by_user_id IS 'User who uploaded the asset.';
-COMMENT ON COLUMN assets.created_at IS 'Timestamp when uploaded.';
-COMMENT ON COLUMN assets.updated_by_user_id IS 'User who last updated this asset.';
-COMMENT ON COLUMN assets.updated_at IS 'Timestamp when last updated.';
-
--- notes
-COMMENT ON TABLE notes IS 'Internal notes linked to campaigns or scheduled posts.';
-COMMENT ON COLUMN notes.id IS 'Primary key, UUID.';
-COMMENT ON COLUMN notes.user_id IS 'Authoring user.';
-COMMENT ON COLUMN notes.campaign_id IS 'Related campaign if applicable.';
-COMMENT ON COLUMN notes.scheduled_post_id IS 'Related post if applicable.';
-COMMENT ON COLUMN notes.content IS 'Note content.';
-COMMENT ON COLUMN notes.created_by_user_id IS 'User who created the note record.';
-COMMENT ON COLUMN notes.created_at IS 'Timestamp when created.';
-COMMENT ON COLUMN notes.updated_by_user_id IS 'User who last updated the note record.';
-COMMENT ON COLUMN notes.updated_at IS 'Timestamp when last updated.';
--- =============================================================
--- End of DDL Script
--- =============================================================
+-- End of DDL Script.
