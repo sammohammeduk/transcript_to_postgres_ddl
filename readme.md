@@ -1,52 +1,76 @@
-The database is designed to support a platform managing social media campaigns for client organisations. Here is a straightforward explanation of the structure and key points:
+This database is designed to manage court case information, including involved people, hearings, evidence, and related reference data. Below is an explanation of how the data is structured, tailored for non-technical stakeholders.
 
-### Key Concepts
+### Overall Structure and Purpose
+The database organises data about legal proceedings, specifically court cases, the people involved, hearings, and evidence. It also includes supporting reference data that standardises terms such as case statuses, access levels, evidence types, and roles people play in cases.
 
-- **Organisations** are companies or agencies that use this platform.
-- **Users** are individuals within these organisations who access the platform.
-- These organisations manage **clients**, for whom they run **campaigns** across various social media platforms.
-- Each campaign consists of **scheduled posts** — specific pieces of content planned to go live on certain dates and times.
-- The platform tracks **engagement metrics** for each scheduled post, such as likes, shares, comments, and impressions.
-- Media files like images or videos used in campaigns or posts are stored as **assets**.
-- Users can create **notes** linked to campaigns or specific posts for internal communication or documentation.
+---
 
-### Database Structure Overview
+### Key Entities and Their Roles
 
-1. **Reference Data**  
-   This table holds system-wide static values grouped by categories, such as user roles, platform types, industries, and subscription tiers. It ensures consistency when categorising information throughout the platform.
+#### 1. **Reference Data**
+- This table stores standardised codes and categories used across the system.
+- Examples include types of evidence (like documents, photos), case statuses (open, closed), and access levels determining who can view certain information.
+- This allows consistent use of common terms throughout the database.
 
-2. **Organisations**  
-   Stores details about client organisations or agencies, including their industry and subscription type.
+#### 2. **Person**
+- Represents any individual involved in the court system.
+- This includes judges, lawyers, plaintiffs, defendants, or other relevant roles.
+- Basic contact information such as email and phone number is stored here.
 
-3. **Users**  
-   Represents platform users who belong to organisations. Each user has a unique email for login, a hashed password for security, and an assigned role determining their access level.
+#### 3. **App User**
+- Stores login details for individuals needing access to the system.
+- Each app user is linked to a person record, tying credentials to an individual.
+- Passwords are securely stored as hashes (encrypted).
 
-4. **Clients**  
-   Represents end-clients managed by organisations. Each client is linked to a single organisation and has contact information and an active status.
+#### 4. **Court Case**
+- The central entity representing a legal case.
+- Contains case name, dates (filing and optional deadline), status, and access permissions.
+- The status reflects whether the case is open, adjourned, closed, etc.
+- Access levels control visibility and permissions for sensitive cases.
 
-5. **Campaigns**  
-   Social media campaigns are linked to clients. Each campaign is defined by a name, targeted platform, goal, scheduled start and end dates, and budget details.
+#### 5. **Hearing**
+- Represents scheduled court sessions linked to a specific court case.
+- Each hearing has a date/time, location (physical or virtual), a judge who presides, and possibly an associated deadline for submissions related to that hearing.
 
-6. **Scheduled Posts**  
-   Within a campaign, posts are scheduled with content, optional media, the platform they will be published to, and timing. Each post has a status indicating whether it is scheduled, published, or otherwise.
+#### 6. **Case Party**
+- Links persons to a court case, specifying the role they play (e.g., plaintiff, defendant).
+- This clarifies each person’s position and involvement in the case.
 
-7. **Post Metrics**  
-   Contains snapshots of engagement data for scheduled posts, capturing how users interact with the content (likes, shares, comments, impressions) at specific points in time.
+#### 7. **Evidence**
+- Records pieces of evidence submitted for a case.
+- Each item has a description, type, submission date, and access level restrictions.
+- Evidence types might include documents, photos, or videos.
 
-8. **Assets**  
-   Media files such as images or videos linked either directly to campaigns or individual scheduled posts.
+#### 8. **Hearing Evidence**
+- A join table that links evidence items to specific hearings where they are presented or referenced.
+- Supports many-to-many relationships, recognising that evidence can relate to multiple hearings.
 
-9. **Notes**  
-   Internal textual notes authored by users, linked either to campaigns or scheduled posts. Only one of these links may be set for each note, ensuring clarity on the note’s context.
+---
 
-### Data Integrity and Relationships
+### Data Relationships and Integrity
+- Many entities are linked via unique identifiers (UUIDs) ensuring each record is completely distinct.
+- Foreign keys enforce valid relationships; for example, a hearing must be linked to a valid case and judge.
+- The reference data ensures that standardised codes are used (e.g., the status of a case must come from predefined statuses).
+- Timestamps and user information track when and by whom records are created or updated, supporting auditability.
 
-- Each table uses a unique identifier (UUID) as its primary key to track each record consistently across the database.
-- Foreign keys enforce relationships, such as users belonging to organisations, campaigns tied to clients, and posts related to campaigns.
-- Unique constraints prevent duplication, for example ensuring user emails are unique across the platform and campaign names don't duplicate for a given client.
-- Check constraints guarantee that notes can only be linked to either a campaign or a scheduled post, not both.
-- Timestamps record creation and update times, with references to users who performed these actions, enabling auditability.
+---
 
-### Overall
+### Example Use Case Flow:
+1. A new **court case** is filed, with its name, filing date, and current status recorded.
+2. **People** involved including judges and parties (plaintiffs, defendants) are added.
+3. **Hearings** are scheduled for particular dates and linked to the case and a presiding judge.
+4. Various **evidence items** are submitted and classified by type.
+5. Evidence is linked to hearings where it is presented or discussed.
 
-The database is structured to ensure a clear hierarchical model: organisations own clients, who have campaigns, which contain posts. The platform captures user roles and permissions while tracking content scheduling, media, user interactions, and internal communication through notes. The design emphasises integrity, audit trails, and flexibility in managing social media marketing activities.
+---
+
+### Benefits of This Model
+- **Clear organisation** of complex court case data and related entities.
+- **Traceability** of individuals' roles and responsibilities.
+- **Controlled access** to sensitive information through access levels.
+- **Standardised vocabulary** via reference data ensures common understanding.
+- **Support for auditing** through created/updated metadata.
+
+---
+
+If you have further questions or need clarification on any part of this model, please feel free to ask!
