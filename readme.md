@@ -1,209 +1,502 @@
 The following transacript was generated and used to create the DDL in this repository:
 
-Meeting Transcript - Courtroom Case Management Software Development  
-Date: [Insert Date]  
-Duration: Approximately 30 minutes  
-Participants:  
-- Alice (Lead Developer)  
-- Bob (Backend Developer)  
-- Carol (Frontend Developer)  
-- David (Product Owner - Non-Technical Stakeholder)  
-- Emma (Legal Advisor - Non-Technical Stakeholder)  
+Meeting Transcript: Courtoom Case Management Software Development
+
+Participants:
+- Alice (Lead Developer)
+- Bob (Senior Developer)
+- Carol (Product Manager)
+- Dan (Legal Consultant)
+- Eve (UX Designer)
+- Frank (QA Lead)
+- Grace (Business Analyst)
 
 ---
 
-**Alice:** Good morning, everyone. Thanks for joining today. As you know, we’re here to discuss building a new courtroom case management platform. The goal is to understand the key entities, their attributes, relationships, and constraints. To start, any initial thoughts on what main entities we should consider?
+**Meeting 1**
 
-**David:** From a courtroom perspective, the obvious ones are Cases, Judges, Lawyers, and Plaintiffs/Defendants. We’ll also need to capture Hearings or Sessions.
+Carol: Welcome everyone. Today we start discussing the new Courtoom Case Management Software platform. Let's kick off with high-level goals.
 
-**Emma:** Yes, and don’t forget Evidence. Each case typically has multiple pieces of evidence linked to it.
+Alice: Sure. Our main objective is to build a system that tracks court cases efficiently, managing case details, parties, schedules, and documents.
 
-**Bob:** Right. So, initial entities could be Case, Person (which could be specialized into Judge, Lawyer, Plaintiff, Defendant), Hearing, and Evidence.
+Dan: Party management is crucial. We have plaintiffs, defendants, lawyers, and judges.
 
-**Carol:** For the frontend, we need to think about how to easily filter and view cases by Judge, status, or upcoming hearings. So attributes like case status and hearing date are important.
+Bob: Agreed. So entities could include Case, Party, Lawyer, Judge, Schedule, and Document.
 
-**Alice:** Good points. Let's break down some attributes per entity. For Case, we could have CaseID, CaseName, FilingDate, Status.
+Grace: We should clarify attributes for each entity. For example, Case could have case number, type, status.
 
-**David:** Status would be like Open, Closed, Adjourned?
-
-**Emma:** Correct. Also, need to consider constraints like a Hearing must be linked to exactly one Case but a Case can have multiple Hearings.
-
-**Bob:** For Person, attributes might be PersonID, Name, Role (Judge, Lawyer, Plaintiff, Defendant), ContactInfo.
-
-**Alice:** Should Role be an attribute or a separate entity?
-
-**Bob:** I’d recommend an attribute to keep it simple, unless role-specific behaviors or data become complex.
-
-**Carol:** Good to know. And for Evidence, attributes could include EvidenceID, Description, Type (Document, Photo, Video), DateSubmitted, and linked to the Case.
-
-**David:** Can Evidence be linked directly to a Hearing? Sometimes Evidence is introduced during Hearings.
-
-**Emma:** That’s a good catch. Maybe the relationship should support that Evidence can be linked to a Case or a specific Hearing.
-
-**Alice:** So a possible constraint is that Evidence must be linked to either one Case or one Hearing, but not both simultaneously.
-
-**Bob:** Or maybe allow Evidence to be linked to multiple Hearings if, say, the same piece is referred to in several hearings.
-
-**Emma:** True, legal cases can be complex that way.
-
-**Carol:** From frontend perspective, we should then allow users to see Evidence at the Case level and at each Hearing level.
-
-**David:** Speaking about Hearings, attributes could be HearingID, Date, Time, Location, Judge assigned.
-
-**Alice:** The Judge assigned to a Hearing means a relationship between Hearing and Person, filtered by Role=Judge.
-
-**Bob:** Right. And we need to enforce constraints that a Hearing has exactly one Judge.
-
-**Emma:** And multiple Lawyers might appear for a Case or for a particular Hearing, so maybe a many-to-many relationship between Lawyers and Hearings.
-
-**Alice:** Let's revisit Persons. We discussed keeping Role as an attribute, but given these multiple specialized relationships, maybe we create sub-entities or use inheritance?
-
-**Bob:** I was thinking of a single Person entity with Role, but we could implement subtypes if needed. That might help enforce role-specific relationship constraints, like only Judges can be assigned to Hearings as presiding authorities.
-
-**Carol:** For the UI, displaying roles clearly when showing persons is helpful, so users know who is who.
-
-**David:** What about case statuses? Should we have fixed statuses or customizable ones?
-
-**Emma:** Fixed would ensure consistency. Think Open, In Progress, Adjourned, Closed.
-
-**Alice:** Sounds good. We can enforce that as an enum constraint on the Case Status attribute.
-
-**Bob:** Also, do we want to track deadlines? Like filing deadlines or hearing dates that must be enforced?
-
-**Emma:** Absolutely. Important for court procedures.
-
-**Alice:** So we can add Deadline attributes, perhaps multiple deadline-related dates linked to Cases and Hearings.
-
-**Carol:** For example, we could have CaseDeadlineDate and HearingDeadlineDate fields.
-
-**David:** How about relationships between Plaintiffs and Defendants within a Case?
-
-**Bob:** Maybe through the Person entity with Role attribute as Plaintiff or Defendant linked to specific Cases.
-
-**Emma:** Exactly. Usually, a Person acts in a role relative to a Case.
-
-**Alice:** So in terms of data modeling, this might imply a relationship entity, say CaseParty, linking Person and Case with Role.
-
-**Bob:** That would also allow the same Person to be a Plaintiff in one Case and a Defendant in another.
-
-**Carol:** Good point. The UI needs to reflect that so users understand each person's role per case.
-
-**David:** I want to circle back to Evidence linking: we agreed it can link to Cases and Hearings. Are there any constraints on the number of Evidence items?
-
-**Emma:** No strict limits. A case can have zero or many Evidence items.
-
-**Alice:** Understood. We’d allow zero to many relationships.
-
-**Bob:** What about confidentiality? Should we track permissions per Evidence or Case?
-
-**Emma:** That’s crucial. Some Evidence might be sealed or restricted.
-
-**Alice:** That might mean an attribute like AccessLevel on Evidence and Case, with constraints to control who can view what.
-
-**Carol:** That impacts UI functionality for logging in users and access filtering.
-
-**David:** Speaking of users, do we need a User entity separate from Person to manage login credentials?
-
-**Alice:** Usually yes, User for authentication and authorization, Person for legal roles.
-
-**Bob:** Links between User and Person can be one-to-one or one-to-many if a user manages multiple roles.
-
-**Carol:** And in UI, some users may only see specific parts based on their User role.
-
-**David:** Great summary. We talked about entities: Case, Person, Hearing, Evidence, User. Relationships like CaseParty (Person-Case-Role), Hearings linked to Cases and Judges, Evidence linked to Cases or Hearings, User linked to Person.
-
-**Alice:** Perfect. Are there other constraints or relationships anyone wants to mention before we wrap up?
-
-**Emma:** Just that dates should be validated — hearing dates can't be before case filing dates.
-
-**Bob:** Good constraint. We’ll enforce that.
-
-**Carol:** And UI should warn users about these validation errors in real time.
-
-**David:** Excellent. Thanks, everyone. Looks like we have a solid foundation to start designing the platform.
-
-**Alice:** Thanks all. We’ll follow up with diagrams and initial schemas based on this discussion.
+Carol: Perfect. Let's draft these out and assign responsibilities.
 
 ---
 
-Meeting concluded.
+**Meeting 2**
+
+Alice: Picking up from last time, how about relationships? A Case relates to multiple Parties; a Lawyer may represent multiple Parties.
+
+Bob: Yeah, that's a many-to-many relationship between Parties and Lawyers.
+
+Eve: From UX view, it’s important to show who represents whom clearly.
+
+Dan: Also, Judges preside over cases - a one-to-many between Judge and Case.
+
+Carol: Let’s note that. Also, we need constraints: a Case must have at least one Plaintiff and one Defendant.
+
+Grace: I'll document that. Also, what about case statuses? Open, Closed, On Hold?
+
+Frank: QA suggests they be enforced by business logic to prevent invalid transitions.
 
 ---
 
-This database is designed to manage court case information, including involved people, hearings, evidence, and related reference data. Below is an explanation of how the data is structured, tailored for non-technical stakeholders.
+**Meeting 3**
 
-### Overall Structure and Purpose
-The database organises data about legal proceedings, specifically court cases, the people involved, hearings, and evidence. It also includes supporting reference data that standardises terms such as case statuses, access levels, evidence types, and roles people play in cases.
+Bob: Revisiting Parties, do we consider Parties as individuals or organizations?
 
----
+Dan: Both. Sometimes plaintiffs are companies.
 
-### Key Entities and Their Roles
+Alice: So Party entity needs a type attribute: Individual vs Organization.
 
-#### 1. **Reference Data**
-- This table stores standardised codes and categories used across the system.
-- Examples include types of evidence (like documents, photos), case statuses (open, closed), and access levels determining who can view certain information.
-- This allows consistent use of common terms throughout the database.
+Grace: Good catch. Also, what about contact info? It may be needed for notifications.
 
-#### 2. **Person**
-- Represents any individual involved in the court system.
-- This includes judges, lawyers, plaintiffs, defendants, or other relevant roles.
-- Basic contact information such as email and phone number is stored here.
-
-#### 3. **App User**
-- Stores login details for individuals needing access to the system.
-- Each app user is linked to a person record, tying credentials to an individual.
-- Passwords are securely stored as hashes (encrypted).
-
-#### 4. **Court Case**
-- The central entity representing a legal case.
-- Contains case name, dates (filing and optional deadline), status, and access permissions.
-- The status reflects whether the case is open, adjourned, closed, etc.
-- Access levels control visibility and permissions for sensitive cases.
-
-#### 5. **Hearing**
-- Represents scheduled court sessions linked to a specific court case.
-- Each hearing has a date/time, location (physical or virtual), a judge who presides, and possibly an associated deadline for submissions related to that hearing.
-
-#### 6. **Case Party**
-- Links persons to a court case, specifying the role they play (e.g., plaintiff, defendant).
-- This clarifies each person’s position and involvement in the case.
-
-#### 7. **Evidence**
-- Records pieces of evidence submitted for a case.
-- Each item has a description, type, submission date, and access level restrictions.
-- Evidence types might include documents, photos, or videos.
-
-#### 8. **Hearing Evidence**
-- A join table that links evidence items to specific hearings where they are presented or referenced.
-- Supports many-to-many relationships, recognising that evidence can relate to multiple hearings.
+Eve: Definitely. We should design easy input forms for contacts.
 
 ---
 
-### Data Relationships and Integrity
-- Many entities are linked via unique identifiers (UUIDs) ensuring each record is completely distinct.
-- Foreign keys enforce valid relationships; for example, a hearing must be linked to a valid case and judge.
-- The reference data ensures that standardised codes are used (e.g., the status of a case must come from predefined statuses).
-- Timestamps and user information track when and by whom records are created or updated, supporting auditability.
+**Meeting 4**
+
+Carol: Back on Case attributes, do we want to include filing date, court location?
+
+Alice: Yes. Filing date is important for timelines, court location helps assign judges.
+
+Dan: Location is also needed for jurisdiction rules.
+
+Bob: So Court entity?
+
+Carol: Possibly. Or maybe Court is an attribute of Case.
+
+Grace: Let's table the Court entity for now and decide later.
 
 ---
 
-### Example Use Case Flow:
-1. A new **court case** is filed, with its name, filing date, and current status recorded.
-2. **People** involved including judges and parties (plaintiffs, defendants) are added.
-3. **Hearings** are scheduled for particular dates and linked to the case and a presiding judge.
-4. Various **evidence items** are submitted and classified by type.
-5. Evidence is linked to hearings where it is presented or discussed.
+**Meeting 5**
+
+Eve: About Document management – should documents be linked directly to Cases or also to Parties?
+
+Alice: Link primarily to Cases, but allow tagging to Parties.
+
+Frank: Also, document types: pleadings, evidence, judgments.
+
+Bob: That suggests a DocumentType entity or enum.
+
+Carol: Let's standardize document types with constraints on allowed values.
 
 ---
 
-### Benefits of This Model
-- **Clear organisation** of complex court case data and related entities.
-- **Traceability** of individuals' roles and responsibilities.
-- **Controlled access** to sensitive information through access levels.
-- **Standardised vocabulary** via reference data ensures common understanding.
-- **Support for auditing** through created/updated metadata.
+**Meeting 6**
+
+Dan: On constraints: a Lawyer must be licensed in jurisdiction of the Court for a Case.
+
+Grace: That implies we track licensing info per Lawyer.
+
+Alice: Agreed. Add licensing jurisdiction as Lawyer attribute.
+
+Bob: Also, ensure Lawyer assignments respect this constraint.
 
 ---
 
-If you have further questions or need clarification on any part of this model, please feel free to ask!
+**Meeting 7**
+
+Bob: Circling back to scheduling – hearings, deadlines?
+
+Alice: Schedule entity linked to Case makes sense, with date/time and type (hearing, deadline).
+
+Eve: We should provide calendar views.
+
+Frank: Need validation on schedule conflicts for Judges and Courtrooms.
+
+Carol: Good point. Let's add constraints for scheduling conflicts.
+
+---
+
+**Meeting 8**
+
+Grace: On relationship cardinality, can a Judge preside over multiple Cases simultaneously?
+
+Dan: Typically, yes.
+
+Bob: So Judge to Case is one-to-many.
+
+Alice: Agreed.
+
+Bob: And Case has one assigned Judge at a time.
+
+Eve: For UI, should be clear who’s presiding.
+
+---
+
+**Meeting 9**
+
+Alice: Revisiting Parties, what about roles? Plaintiff, Defendant, Witness.
+
+Carol: Maybe a PartyRole entity.
+
+Grace: Or an attribute on Party per Case relationship.
+
+Bob: The latter, as role depends on the Case context.
+
+---
+
+**Meeting 10**
+
+Dan: On constraints, a Case cannot move to Closed without a final Judgment document.
+
+Alice: So a business rule checks for Judgment document before closing Case.
+
+Frank: QA can implement test cases for that.
+
+---
+
+**Meeting 11**
+
+Eve: About Lawyers representing multiple Parties, do we track representation period?
+
+Bob: Good question. Could be an attribute on Lawyer-Party relationship: start date, end date.
+
+Grace: That will help with accuracy in cases spanning years.
+
+Alice: Let’s add that.
+
+---
+
+**Meeting 12**
+
+Carol: Court entity revisit – would it make sense to model Courtrooms as sub-entities?
+
+Bob: We could have Court and Courtroom entities, Courtroom belonging to Court.
+
+Dan: Helps for scheduling and resource management.
+
+Alice: Let's split Court and Courtroom.
+
+---
+
+**Meeting 13**
+
+Alice: Revisiting Document linking, should documents have versions?
+
+Eve: Very useful for edits.
+
+Bob: Implement DocumentVersion entity or attributes.
+
+Carol: Sounds good.
+
+---
+
+**Meeting 14**
+
+Dan: Can a Party appear in multiple Cases?
+
+Bob: Yes, definitely.
+
+Grace: So Party to Case is many-to-many.
+
+Alice: With roles per Case, as noted before.
+
+---
+
+**Meeting 15**
+
+Frank: On constraints, Schedule should prevent double booking Courtrooms.
+
+Bob: Building validations for scheduling.
+
+Alice: Also, avoid Judges being double booked.
+
+---
+
+**Meeting 16**
+
+Grace: Revisiting statuses, any constraints on transitions?
+
+Carol: Yes, rules like Open -> On Hold -> Open or Closed.
+
+Dan: Can't reopen Closed without special permission.
+
+Alice: Will encode rules in workflow.
+
+---
+
+**Meeting 17**
+
+Bob: For Parties who are Organizations, do we model contacts separately?
+
+Eve: Yes, Organizations often have multiple contacts.
+
+Grace: So PartyContact entity related to Party.
+
+Alice: Let's add.
+
+---
+
+**Meeting 18**
+
+Carol: Back to Lawyers, track bar association memberships?
+
+Dan: Could be useful for verifications.
+
+Bob: Add attribute or separate entity.
+
+Grace: We can start with attribute and expand later.
+
+---
+
+**Meeting 19**
+
+Alice: Revisiting relationship constraints – Case must have assigned Judge before scheduling hearings.
+
+Frank: Fail schedule creation otherwise.
+
+Carol: Add business rule.
+
+---
+
+**Meeting 20**
+
+Eve: On UX, can we have dashboards by Case status, upcoming hearings?
+
+Alice: We'll design APIs to support that.
+
+Bob: Need to track key dates on Case.
+
+---
+
+**Meeting 21**
+
+Grace: Revisiting document types – should Evidence be a parent type with subtypes?
+
+Bob: Makes sense.
+
+Alice: Implement document type hierarchy.
+
+---
+
+**Meeting 22**
+
+Dan: On representation, can Lawyers represent both Plaintiff and Defendant in different Cases?
+
+Bob: Yes, no conflict at database level.
+
+Eve: UI should reflect representation per Case clearly.
+
+---
+
+**Meeting 23**
+
+Carol: Revisiting scheduling, what about rescheduling constraints?
+
+Alice: Notify affected parties.
+
+Frank: We need audit trail on schedule changes.
+
+---
+
+**Meeting 24**
+
+Grace: On case outcomes – track verdicts?
+
+Dan: Yes, outcome is important attribute.
+
+Bob: Add Verdict entity related to Case.
+
+---
+
+**Meeting 25**
+
+Alice: Revisiting constraints, cannot delete Case with active Schedules or Documents.
+
+Frank: Enforce referential integrity.
+
+Carol: Documented.
+
+---
+
+**Meeting 26**
+
+Eve: On Parties, can multiple Contacts be primary?
+
+Bob: Only one primary contact per Party.
+
+Grace: Add constraint.
+
+---
+
+**Meeting 27**
+
+Dan: Revisiting Lawyers, track specialization areas?
+
+Alice: That may affect case assignments.
+
+Bob: Add attribute specialization in Lawyer.
+
+---
+
+**Meeting 28**
+
+Carol: Back to Courtrooms – add capacity attribute?
+
+Eve: Useful for planning.
+
+Bob: Adding.
+
+---
+
+**Meeting 29**
+
+Frank: On workflows, adding automatic status updates?
+
+Alice: Based on events like submission of Judgment, auto-close Case.
+
+Carol: Great enhancement.
+
+---
+
+**Meeting 30**
+
+Carol: Summarizing: we have main entities - Case, Party, Lawyer, Judge, Document, Schedule, Court, Courtroom. Attributes and relationships defined. Constraints captured. Next steps: detailed data modeling.
+
+Alice: Thanks all for participation.
+
+---
+
+End of Transcript.
+
+---
+
+This database has been carefully structured to manage information related to court proceedings, participants, and related documents. The design ensures clarity and organisation of data for easy retrieval and reporting, suitable for judicial administration or case management systems. Below is a plain English explanation of the database model with emphasis on its entities and their relationships.
+
+---
+
+### Overview of Core Concepts
+
+- **Court and Courtroom**: The system records details about courts and their specific courtrooms, including location, name, and capacity.
+- **Judges**: Each judge is linked to a court and can be assigned to cases.
+- **Cases**: A core entity representing legal cases with attributes like case number, type, status, dates, assigned judge, and court.
+- **Parties and Roles**: Individuals or organisations involved in cases, having a specified role within each case.
+- **Lawyers and Specializations**: Lawyers are modelled with licensing info and can have multiple specializations. Their relationships to parties they represent are tracked with start and end dates.
+- **Schedules**: Represent hearings or deadlines related to cases, linked to judges and courtrooms.
+- **Documents and Versions**: Documents linked to cases, with support for version control and ability to tag related parties.
+- **Verdicts**: Captures the outcome for closed cases.
+
+---
+
+### Reference Data Tables
+
+Several tables define fixed sets of types or statuses used throughout the system — these are known as reference tables. They standardise codes and descriptions for sets such as:
+
+- **Case Status (`ref_case_status`)** – E.g., Open, Closed, Pending.
+- **Case Type (`ref_case_type`)** – E.g., Civil, Criminal, Family.
+- **Party Type (`ref_party_type`)** – Individual or Organisation.
+- **Contact Type (`ref_contact_type`)** – E.g., Email, Phone.
+- **Document Type (`ref_document_type`)** – Defines types of documents, allowing a hierarchical structure where each type can have a parent.
+- **Schedule Type (`ref_schedule_type`)** – Types of scheduled events, such as hearings or deadlines.
+- **Specialization (`ref_specialization`)** – Legal specialisations for lawyers.
+- **Party Role (`ref_party_role`)** – Defines the role a party plays in a case, e.g., Plaintiff, Defendant.
+
+These reference tables ensure consistency when assigning types or statuses, improving data quality and simplifying reporting.
+
+---
+
+### Main Entities
+
+#### Court and Courtroom
+
+- A **Court** represents a legal institution identified by name and location.
+- Each **Courtroom** belongs to one court and may have a capacity indicating how many people it can accommodate.
+
+#### Judge
+
+- Judges are real persons linked to one court.
+- Complete with first and last names.
+- A judge can be assigned to multiple cases and schedules.
+
+#### Party
+
+- Represents any person or organisation involved in court cases.
+- Identified by name and categorised by party type (individual or organisation).
+
+#### Lawyer
+
+- Lawyers include personal details and professional licensing info, such as license number, expiration date, and jurisdiction.
+- Lawyers can represent multiple parties over time.
+
+---
+
+### Cases and Their Participants
+
+#### Case
+
+- Each case has a unique case number.
+- Linked to one case type and status.
+- It records filing and closure dates.
+- Associated with one court and one assigned judge.
+- Contains an outcome description and an automatically calculated flag indicating if the case is closed based on status.
+
+#### Case Party
+
+- Joins parties to cases with defined roles (e.g., Plaintiff or Defendant).
+- Enforces uniqueness to prevent duplicate assignments of the same party-role combination to a case.
+
+#### Party Contact
+
+- Stores contact details for parties.
+- Each contact has a type (like email or phone) and a value.
+- Allows one primary contact per party, ensuring a clear main contact method is designated.
+
+#### Lawyer-Party Relationships
+
+- **Lawyer Party** tracks which parties a lawyer represents, including the start and optional end of representation dates.
+- This allows historical and current representation data.
+- **Lawyer Specialization** captures the many-to-many relationship between lawyers and their legal expertise areas.
+
+---
+
+### Scheduling Hearings and Events
+
+- **Schedule** entities record specific scheduled events related to cases.
+- Each schedule is linked to a case, judge, courtroom, and a schedule type.
+- Start and end times for each event are kept for precise calendar or timeline management.
+
+---
+
+### Document Management
+
+- **Document** records hold metadata including type, title, and optional description, each linked to a case.
+- Document types are hierarchical, allowing broad or specific categorisation.
+- **Document Version** supports multiple sequential versions of each document, tracking file paths for storage.
+- **Document Party** links documents to parties for tagging or relevance indication.
+
+---
+
+### Verdicts on Cases
+
+- The **Verdict** table holds outcomes for cases that have been closed.
+- Each verdict is linked distinctly to one case.
+- Includes the verdict date and optional descriptive text about the result.
+
+---
+
+### Data Integrity and Usability Features
+
+- Use of UUIDs for primary keys across entities provides a high degree of uniqueness and security.
+- Foreign key constraints enforce links between related data, ensuring referential integrity.
+- Unique indexes on key fields (e.g., case number, lawyers’ license numbers) prevent duplicate records and improve retrieval speeds.
+- Timestamp fields on most tables (created and updated datetime) along with the recorded user who created or last updated the data support audit trails.
+- Computed column in the case table automatically flags if a case is considered closed, reducing errors and simplifying queries.
+
+---
+
+### Summary
+
+This database is comprehensively designed to cover the lifecycle of legal cases from initial filing through scheduling, representation, documentation, and verdict. The use of reference data helps maintain standardisation, while detailed linking tables manage complex relationships such as lawyers representing multiple parties or parties playing different roles in various cases.
+
+The thorough audit fields and versioning ensure accountability and document control, making the system robust for legal administration and reporting purposes.
 
