@@ -1,197 +1,392 @@
--- Create Extensions  
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";  
+-- Create required extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create All Tables and Fields  
-CREATE TABLE reference_data (  
-    reference_data_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    reference_type VARCHAR(100) NOT NULL,  
-    reference_code VARCHAR(100) NOT NULL,  
-    description TEXT,  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+-- Create reference data tables
+CREATE TABLE ref_case_status (
+    case_status_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE UNIQUE INDEX ux_reference_data_type_code  
-    ON reference_data(reference_type, reference_code);  
+CREATE TABLE ref_case_type (
+    case_type_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE TABLE person (  
-    person_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    first_name VARCHAR(100) NOT NULL,  
-    last_name VARCHAR(100) NOT NULL,  
-    role VARCHAR(50) NOT NULL,  -- e.g., Judge, Lawyer, Plaintiff, Defendant  
-    contact_email VARCHAR(255),  
-    contact_phone VARCHAR(50),  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+CREATE TABLE ref_party_type (
+    party_type_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE TABLE app_user (  
-    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    username VARCHAR(100) NOT NULL UNIQUE,  
-    password_hash VARCHAR(255) NOT NULL,  
-    person_id UUID NOT NULL,  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+CREATE TABLE ref_contact_type (
+    contact_type_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE TABLE court_case (  
-    case_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    case_name VARCHAR(200) NOT NULL,  
-    filing_date DATE NOT NULL,  
-    deadline_date DATE,  
-    status_id UUID NOT NULL,  -- FK to reference_data(reference_type='case_status')  
-    access_level_id UUID,      -- FK to reference_data(reference_type='access_level')  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+CREATE TABLE ref_document_type (
+    document_type_code VARCHAR(50) PRIMARY KEY,
+    parent_document_type_code VARCHAR(50),
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ,
+    CONSTRAINT fk_ref_document_type_parent
+      FOREIGN KEY(parent_document_type_code)
+      REFERENCES ref_document_type(document_type_code)
+      ON DELETE SET NULL
+);
 
-CREATE TABLE hearing (  
-    hearing_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    case_id UUID NOT NULL,  
-    hearing_datetime TIMESTAMP WITHOUT TIME ZONE NOT NULL,  
-    location VARCHAR(200),  
-    judge_id UUID NOT NULL,  
-    deadline_date DATE,  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+CREATE TABLE ref_schedule_type (
+    schedule_type_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE TABLE case_party (  
-    case_party_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    case_id UUID NOT NULL,  
-    person_id UUID NOT NULL,  
-    party_role_id UUID NOT NULL,  -- FK to reference_data(reference_type='party_role')  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+CREATE TABLE ref_specialization (
+    specialization_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE TABLE evidence (  
-    evidence_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
-    case_id UUID NOT NULL,  
-    description TEXT,  
-    type_id UUID NOT NULL,            -- FK to reference_data(reference_type='evidence_type')  
-    date_submitted DATE,  
-    access_level_id UUID,             -- FK to reference_data(reference_type='access_level')  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()  
-);  
+CREATE TABLE ref_party_role (
+    party_role_code VARCHAR(50) PRIMARY KEY,
+    description TEXT NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-CREATE TABLE hearing_evidence (  
-    hearing_id UUID NOT NULL,  
-    evidence_id UUID NOT NULL,  
-    created_by_username VARCHAR(255),  
-    updated_by_username VARCHAR(255),  
-    created_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    updated_datetime TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),  
-    PRIMARY KEY (hearing_id, evidence_id)  
-);  
+-- Create core tables
+CREATE TABLE court (
+    court_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    location VARCHAR(200),
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
--- Create All Constraints & Foreign Keys in Logical Order  
-ALTER TABLE app_user  
-    ADD CONSTRAINT fk_app_user_person  
-        FOREIGN KEY (person_id) REFERENCES person(person_id);  
+CREATE TABLE courtroom (
+    courtroom_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    court_id UUID NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    capacity INTEGER,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-ALTER TABLE court_case  
-    ADD CONSTRAINT fk_case_status  
-        FOREIGN KEY (status_id) REFERENCES reference_data(reference_data_id),  
-    ADD CONSTRAINT fk_case_access_level  
-        FOREIGN KEY (access_level_id) REFERENCES reference_data(reference_data_id);  
+CREATE TABLE judge (
+    judge_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    court_id UUID NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-ALTER TABLE hearing  
-    ADD CONSTRAINT fk_hearing_case  
-        FOREIGN KEY (case_id) REFERENCES court_case(case_id),  
-    ADD CONSTRAINT fk_hearing_judge  
-        FOREIGN KEY (judge_id) REFERENCES person(person_id);  
+CREATE TABLE party (
+    party_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    party_type_code VARCHAR(50) NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-ALTER TABLE case_party  
-    ADD CONSTRAINT fk_case_party_case  
-        FOREIGN KEY (case_id) REFERENCES court_case(case_id),  
-    ADD CONSTRAINT fk_case_party_person  
-        FOREIGN KEY (person_id) REFERENCES person(person_id),  
-    ADD CONSTRAINT fk_case_party_role  
-        FOREIGN KEY (party_role_id) REFERENCES reference_data(reference_data_id);  
+CREATE TABLE lawyer (
+    lawyer_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    license_number VARCHAR(100) UNIQUE NOT NULL,
+    license_expiration_date DATE,
+    licensing_jurisdiction VARCHAR(200),
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-ALTER TABLE evidence  
-    ADD CONSTRAINT fk_evidence_case  
-        FOREIGN KEY (case_id) REFERENCES court_case(case_id),  
-    ADD CONSTRAINT fk_evidence_type  
-        FOREIGN KEY (type_id) REFERENCES reference_data(reference_data_id),  
-    ADD CONSTRAINT fk_evidence_access_level  
-        FOREIGN KEY (access_level_id) REFERENCES reference_data(reference_data_id);  
+CREATE TABLE "case" (
+    case_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_number VARCHAR(100) UNIQUE NOT NULL,
+    case_type_code VARCHAR(50) NOT NULL,
+    case_status_code VARCHAR(50) NOT NULL,
+    filing_date DATE NOT NULL,
+    closed_date DATE,
+    court_id UUID NOT NULL,
+    judge_id UUID NOT NULL,
+    outcome_description TEXT,
+    is_closed BOOLEAN GENERATED ALWAYS AS (case_status_code = 'CLOSED') STORED,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-ALTER TABLE hearing_evidence  
-    ADD CONSTRAINT fk_hearing_evidence_hearing  
-        FOREIGN KEY (hearing_id) REFERENCES hearing(hearing_id),  
-    ADD CONSTRAINT fk_hearing_evidence_evidence  
-        FOREIGN KEY (evidence_id) REFERENCES evidence(evidence_id);  
+CREATE TABLE case_party (
+    case_party_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_id UUID NOT NULL,
+    party_id UUID NOT NULL,
+    party_role_code VARCHAR(50) NOT NULL,
+    CONSTRAINT uq_case_party UNIQUE(case_id, party_id, party_role_code),
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
--- Create Comments for Tables and Fields  
-COMMENT ON TABLE reference_data IS 'Generic reference table for codes and types (e.g., case_status, evidence_type, access_level, party_role).';  
-COMMENT ON COLUMN reference_data.reference_data_id IS 'Primary key for the reference data item.';  
-COMMENT ON COLUMN reference_data.reference_type IS 'Category of reference data (must match business context).';  
-COMMENT ON COLUMN reference_data.reference_code IS 'Unique code within its type for business use.';  
-COMMENT ON COLUMN reference_data.description IS 'Human-readable description of the reference code.';  
+CREATE TABLE party_contact (
+    party_contact_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    party_id UUID NOT NULL,
+    contact_type_code VARCHAR(50) NOT NULL,
+    contact_value VARCHAR(200) NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT one_primary_contact_per_party UNIQUE(party_id) WHERE (is_primary),
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-COMMENT ON TABLE person IS 'Represents any individual involved in the court system (judge, lawyer, plaintiff, defendant).';  
-COMMENT ON COLUMN person.person_id IS 'Primary key for a person record.';  
-COMMENT ON COLUMN person.first_name IS 'Person''s given name.';  
-COMMENT ON COLUMN person.last_name IS 'Person''s family name.';  
-COMMENT ON COLUMN person.role IS 'Primary legal role (Judge, Lawyer, Plaintiff, Defendant).';  
-COMMENT ON COLUMN person.contact_email IS 'Email address of the person.';  
-COMMENT ON COLUMN person.contact_phone IS 'Telephone contact number.';  
+CREATE TABLE lawyer_party (
+    lawyer_party_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lawyer_id UUID NOT NULL,
+    party_id UUID NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    CONSTRAINT uq_lawyer_party UNIQUE(lawyer_id, party_id, start_date),
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-COMMENT ON TABLE app_user IS 'Login credentials and linkage to a person record for authentication/authorization.';  
-COMMENT ON COLUMN app_user.user_id IS 'Primary key for user credentials.';  
-COMMENT ON COLUMN app_user.username IS 'Unique login name.';  
-COMMENT ON COLUMN app_user.password_hash IS 'Hashed password for authentication.';  
-COMMENT ON COLUMN app_user.person_id IS 'Links user credentials to a person entity.';  
+CREATE TABLE lawyer_specialization (
+    lawyer_id UUID NOT NULL,
+    specialization_code VARCHAR(50) NOT NULL,
+    PRIMARY KEY(lawyer_id, specialization_code),
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-COMMENT ON TABLE court_case IS 'Core table storing information about legal cases.';  
-COMMENT ON COLUMN court_case.case_id IS 'Primary key for court case.';  
-COMMENT ON COLUMN court_case.case_name IS 'Descriptive name/title of the case.';  
-COMMENT ON COLUMN court_case.filing_date IS 'Official date when the case was filed.';  
-COMMENT ON COLUMN court_case.deadline_date IS 'Optional deadline date for case-related actions.';  
-COMMENT ON COLUMN court_case.status_id IS 'References current status (Open, Adjourned, Closed, etc.).';  
-COMMENT ON COLUMN court_case.access_level_id IS 'Reference to access restrictions for case visibility.';  
+CREATE TABLE schedule (
+    schedule_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_id UUID NOT NULL,
+    judge_id UUID NOT NULL,
+    courtroom_id UUID NOT NULL,
+    schedule_type_code VARCHAR(50) NOT NULL,
+    scheduled_start TIMESTAMPTZ NOT NULL,
+    scheduled_end TIMESTAMPTZ NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-COMMENT ON TABLE hearing IS 'Scheduled court session linked to a case and presided over by a judge.';  
-COMMENT ON COLUMN hearing.hearing_id IS 'Primary key for hearing record.';  
-COMMENT ON COLUMN hearing.case_id IS 'Foreign key linking to the parent court case.';  
-COMMENT ON COLUMN hearing.hearing_datetime IS 'Date and time when the hearing occurs.';  
-COMMENT ON COLUMN hearing.location IS 'Physical or virtual location of the hearing.';  
-COMMENT ON COLUMN hearing.judge_id IS 'Person (Judge) presiding over this hearing.';  
-COMMENT ON COLUMN hearing.deadline_date IS 'Optional deadline date for hearing-related filings.';  
+CREATE TABLE document (
+    document_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_id UUID NOT NULL,
+    document_type_code VARCHAR(50) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    created_by_username VARCHAR(150) NOT NULL,
+    updated_by_username VARCHAR(150),
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_datetime TIMESTAMPTZ
+);
 
-COMMENT ON TABLE case_party IS 'Associates persons with cases in roles such as plaintiff or defendant.';  
-COMMENT ON COLUMN case_party.case_party_id IS 'Primary key for case-party assignment.';  
-COMMENT ON COLUMN case_party.case_id IS 'Foreign key to the associated court case.';  
-COMMENT ON COLUMN case_party.person_id IS 'Foreign key to the person in this role.';  
-COMMENT ON COLUMN case_party.party_role_id IS 'References the role in this case (plaintiff or defendant).';  
+CREATE TABLE document_version (
+    document_version_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    document_id UUID NOT NULL,
+    version_number INTEGER NOT NULL,
+    file_path TEXT NOT NULL,
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_doc_ver UNIQUE(document_id, version_number)
+);
 
-COMMENT ON TABLE evidence IS 'Records individual evidence items linked to cases and potentially hearings.';  
-COMMENT ON COLUMN evidence.evidence_id IS 'Primary key for an evidence item.';  
-COMMENT ON COLUMN evidence.case_id IS 'Foreign key to the parent court case.';  
-COMMENT ON COLUMN evidence.description IS 'Textual description of the evidence.';  
-COMMENT ON COLUMN evidence.type_id IS 'References the type of evidence (Document, Photo, Video).';  
-COMMENT ON COLUMN evidence.date_submitted IS 'Date when evidence was submitted to the case.';  
-COMMENT ON COLUMN evidence.access_level_id IS 'Reference to access restrictions for evidence.';  
+CREATE TABLE document_party (
+    document_party_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    document_id UUID NOT NULL,
+    party_id UUID NOT NULL,
+    created_by_username VARCHAR(150) NOT NULL,
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-COMMENT ON TABLE hearing_evidence IS 'Join table linking evidence items to hearings where they are presented.';  
-COMMENT ON COLUMN hearing_evidence.hearing_id IS 'Foreign key to the hearing.';  
-COMMENT ON COLUMN hearing_evidence.evidence_id IS 'Foreign key to the evidence item.';  
+CREATE TABLE verdict (
+    verdict_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_id UUID UNIQUE NOT NULL,
+    verdict_date DATE NOT NULL,
+    description TEXT,
+    created_by_username VARCHAR(150) NOT NULL,
+    created_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- End of DDL Script.
+-- Foreign Key Constraints
+ALTER TABLE courtroom
+  ADD CONSTRAINT fk_courtroom_court FOREIGN KEY(court_id) REFERENCES court(court_id);
+
+ALTER TABLE judge
+  ADD CONSTRAINT fk_judge_court FOREIGN KEY(court_id) REFERENCES court(court_id);
+
+ALTER TABLE party
+  ADD CONSTRAINT fk_party_type FOREIGN KEY(party_type_code) REFERENCES ref_party_type(party_type_code);
+
+ALTER TABLE lawyer_specialization
+  ADD CONSTRAINT fk_law_spec_lawyer FOREIGN KEY(lawyer_id) REFERENCES lawyer(lawyer_id),
+  ADD CONSTRAINT fk_law_spec_spec FOREIGN KEY(specialization_code) REFERENCES ref_specialization(specialization_code);
+
+ALTER TABLE lawyer_party
+  ADD CONSTRAINT fk_lawyer_party_lawyer FOREIGN KEY(lawyer_id) REFERENCES lawyer(lawyer_id),
+  ADD CONSTRAINT fk_lawyer_party_party FOREIGN KEY(party_id) REFERENCES party(party_id);
+
+ALTER TABLE party_contact
+  ADD CONSTRAINT fk_party_contact_party FOREIGN KEY(party_id) REFERENCES party(party_id),
+  ADD CONSTRAINT fk_party_contact_type FOREIGN KEY(contact_type_code) REFERENCES ref_contact_type(contact_type_code);
+
+ALTER TABLE "case"
+  ADD CONSTRAINT fk_case_type FOREIGN KEY(case_type_code) REFERENCES ref_case_type(case_type_code),
+  ADD CONSTRAINT fk_case_status FOREIGN KEY(case_status_code) REFERENCES ref_case_status(case_status_code),
+  ADD CONSTRAINT fk_case_court FOREIGN KEY(court_id) REFERENCES court(court_id),
+  ADD CONSTRAINT fk_case_judge FOREIGN KEY(judge_id) REFERENCES judge(judge_id);
+
+ALTER TABLE case_party
+  ADD CONSTRAINT fk_case_party_case FOREIGN KEY(case_id) REFERENCES "case"(case_id),
+  ADD CONSTRAINT fk_case_party_party FOREIGN KEY(party_id) REFERENCES party(party_id),
+  ADD CONSTRAINT fk_case_party_role FOREIGN KEY(party_role_code) REFERENCES ref_party_role(party_role_code);
+
+ALTER TABLE schedule
+  ADD CONSTRAINT fk_schedule_case FOREIGN KEY(case_id) REFERENCES "case"(case_id),
+  ADD CONSTRAINT fk_schedule_judge FOREIGN KEY(judge_id) REFERENCES judge(judge_id),
+  ADD CONSTRAINT fk_schedule_courtroom FOREIGN KEY(courtroom_id) REFERENCES courtroom(courtroom_id),
+  ADD CONSTRAINT fk_schedule_type FOREIGN KEY(schedule_type_code) REFERENCES ref_schedule_type(schedule_type_code);
+
+ALTER TABLE document
+  ADD CONSTRAINT fk_document_case FOREIGN KEY(case_id) REFERENCES "case"(case_id),
+  ADD CONSTRAINT fk_document_type FOREIGN KEY(document_type_code) REFERENCES ref_document_type(document_type_code);
+
+ALTER TABLE document_version
+  ADD CONSTRAINT fk_document_version_doc FOREIGN KEY(document_id) REFERENCES document(document_id);
+
+ALTER TABLE document_party
+  ADD CONSTRAINT fk_document_party_doc FOREIGN KEY(document_id) REFERENCES document(document_id),
+  ADD CONSTRAINT fk_document_party_party FOREIGN KEY(party_id) REFERENCES party(party_id);
+
+ALTER TABLE verdict
+  ADD CONSTRAINT fk_verdict_case FOREIGN KEY(case_id) REFERENCES "case"(case_id);
+
+-- Indexes
+CREATE INDEX idx_case_number ON "case"(case_number);
+CREATE INDEX idx_schedule_time ON schedule(scheduled_start, scheduled_end);
+CREATE INDEX idx_doc_case ON document(case_id);
+CREATE INDEX idx_docparty_party ON document_party(party_id);
+CREATE INDEX idx_courtroom_court ON courtroom(court_id);
+CREATE INDEX idx_judge_court ON judge(court_id);
+
+-- Comments on Tables and Columns
+COMMENT ON TABLE court IS 'Court entity storing courts by name and location';
+COMMENT ON COLUMN court.court_id IS 'Primary key for court';
+COMMENT ON COLUMN court.name IS 'Name of the court';
+COMMENT ON COLUMN court.location IS 'Geographic location or address for the court';
+
+COMMENT ON TABLE courtroom IS 'Courtroom entity within a court';
+COMMENT ON COLUMN courtroom.courtroom_id IS 'Primary key for courtroom';
+COMMENT ON COLUMN courtroom.court_id IS 'Foreign key to court';
+COMMENT ON COLUMN courtroom.name IS 'Name or number of the courtroom';
+COMMENT ON COLUMN courtroom.capacity IS 'Seating or participant capacity of the courtroom';
+
+COMMENT ON TABLE judge IS 'Judge entity assigned to cases';
+COMMENT ON COLUMN judge.judge_id IS 'Primary key for judge';
+COMMENT ON COLUMN judge.first_name IS 'Judge''s first name';
+COMMENT ON COLUMN judge.last_name IS 'Judge''s last name';
+COMMENT ON COLUMN judge.court_id IS 'Court where judge serves';
+
+COMMENT ON TABLE party IS 'Party entity representing individuals or organizations';
+COMMENT ON COLUMN party.party_id IS 'Primary key for party';
+COMMENT ON COLUMN party.name IS 'Name of the party';
+COMMENT ON COLUMN party.party_type_code IS 'Type of party (Individual or Organization)';
+
+COMMENT ON TABLE party_contact IS 'Contact information records for parties';
+COMMENT ON COLUMN party_contact.party_contact_id IS 'Primary key for party contact';
+COMMENT ON COLUMN party_contact.contact_type_code IS 'Type of contact (Email, Phone, etc.)';
+COMMENT ON COLUMN party_contact.contact_value IS 'Contact detail value';
+COMMENT ON COLUMN party_contact.is_primary IS 'Flag to indicate primary contact';
+
+COMMENT ON TABLE lawyer IS 'Lawyer entity with licensing information';
+COMMENT ON COLUMN lawyer.license_number IS 'Professional license number';
+COMMENT ON COLUMN lawyer.license_expiration_date IS 'License expiration date';
+COMMENT ON COLUMN lawyer.licensing_jurisdiction IS 'Jurisdiction where lawyer is licensed';
+
+COMMENT ON TABLE ref_case_status IS 'Reference table for case statuses';
+COMMENT ON TABLE ref_case_type IS 'Reference table for case types';
+COMMENT ON TABLE ref_party_type IS 'Reference table for party types';
+COMMENT ON TABLE ref_contact_type IS 'Reference table for contact types';
+COMMENT ON TABLE ref_document_type IS 'Reference table for document types with hierarchy';
+COMMENT ON TABLE ref_schedule_type IS 'Reference table for schedule types';
+COMMENT ON TABLE ref_specialization IS 'Reference table for lawyer specialization areas';
+COMMENT ON TABLE ref_party_role IS 'Reference table for party roles in a case';
+
+COMMENT ON TABLE "case" IS 'Court case entity storing core case details';
+COMMENT ON COLUMN "case".case_number IS 'Unique case identifier assigned by court';
+COMMENT ON COLUMN "case".case_type_code IS 'Reference to type of case';
+COMMENT ON COLUMN "case".case_status_code IS 'Reference to status of case';
+COMMENT ON COLUMN "case".filing_date IS 'Date when case was filed';
+COMMENT ON COLUMN "case".closed_date IS 'Date when case was closed';
+COMMENT ON COLUMN "case".judge_id IS 'Judge assigned to the case';
+COMMENT ON COLUMN "case".court_id IS 'Court where the case is heard';
+COMMENT ON COLUMN "case".is_closed IS 'Indicates if case_status_code = CLOSED';
+
+COMMENT ON TABLE case_party IS 'Linking table between cases and parties with roles';
+COMMENT ON COLUMN case_party.party_role_code IS 'Role of party in the case (Plaintiff, Defendant, etc.)';
+
+COMMENT ON TABLE lawyer_party IS 'Representation linkage between lawyers and parties over time';
+COMMENT ON COLUMN lawyer_party.start_date IS 'Date representation began';
+COMMENT ON COLUMN lawyer_party.end_date IS 'Date representation ended';
+
+COMMENT ON TABLE lawyer_specialization IS 'Many-to-many between lawyers and specializations';
+
+COMMENT ON TABLE schedule IS 'Schedule entries for cases (hearings, deadlines, etc.)';
+COMMENT ON COLUMN schedule.scheduled_start IS 'Start datetime of schedule entry';
+COMMENT ON COLUMN schedule.scheduled_end IS 'End datetime of schedule entry';
+
+COMMENT ON TABLE document IS 'Document metadata linked to cases';
+COMMENT ON COLUMN document.title IS 'Title or name of document';
+
+COMMENT ON TABLE document_version IS 'Version control for documents';
+COMMENT ON COLUMN document_version.version_number IS 'Sequential version number of document';
+
+COMMENT ON TABLE document_party IS 'Linking table to tag documents to parties';
+
+COMMENT ON TABLE verdict IS 'Verdict information for closed cases';
+COMMENT ON COLUMN verdict.verdict_date IS 'Date when verdict was issued';
+COMMENT ON COLUMN verdict.case_id IS 'Reference to the case for this verdict';
